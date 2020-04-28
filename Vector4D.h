@@ -9,6 +9,7 @@
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
 #pragma once
+#include "Vector3D.h"
 
 class Vector4D
 {
@@ -20,6 +21,9 @@ public:
 	{
 	}
 	Vector4D(const Vector4D& vector) :m_x(vector.m_x), m_y(vector.m_y), m_z(vector.m_z), m_w(vector.m_w)
+	{
+	}
+	Vector4D(const Vector3D& vector) :m_x(vector.m_x), m_y(vector.m_y), m_z(vector.m_z), m_w(1.0)
 	{
 	}
 
