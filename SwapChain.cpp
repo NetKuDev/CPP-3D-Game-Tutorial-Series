@@ -1,12 +1,26 @@
-// Copyright (c) 2019 - 2020 PardCode
-// All rights reserved.
-//
-// This file is part of CPP-3D-Game-Tutorial-Series Project, accessible from https://github.com/PardCode/CPP-3D-Game-Tutorial-Series
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License 
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+/*MIT License
+
+C++ 3D Game Tutorial Series (https://github.com/PardCode/CPP-3D-Game-Tutorial-Series)
+
+Copyright (c) 2019-2020, PardCode
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.*/
 
 #include "SwapChain.h"
 #include "RenderSystem.h"
@@ -28,6 +42,7 @@ SwapChain::SwapChain(HWND hwnd, UINT width, UINT height,RenderSystem * system) :
 	desc.OutputWindow = hwnd;
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
+	desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 	desc.Windowed = TRUE;
 
 	//Create the swap chain for the window indicated by HWND parameter
@@ -38,17 +53,54 @@ SwapChain::SwapChain(HWND hwnd, UINT width, UINT height,RenderSystem * system) :
 		throw std::exception("SwapChain not created successfully");
 	}
 
+	reloadBuffers(width, height);
+}
+
+
+void SwapChain::setFullScreen(bool fullscreen, unsigned int width, unsigned int height)
+{
+	resize(width, height);
+	m_swap_chain->SetFullscreenState(fullscreen, nullptr);
+}
+
+void SwapChain::resize(unsigned int width, unsigned int height)
+{
+	if (m_rtv) m_rtv->Release();
+	if (m_dsv) m_dsv->Release();
+
+	m_swap_chain->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+	reloadBuffers(width, height);
+}
+
+bool SwapChain::present(bool vsync)
+{
+	m_swap_chain->Present(vsync, NULL);
+	return true;
+}
+
+
+SwapChain::~SwapChain()
+{
+	m_dsv->Release();
+	m_rtv->Release();
+	m_swap_chain->Release();
+}
+
+void SwapChain::reloadBuffers(unsigned int width, unsigned int height)
+{
+	ID3D11Device*device = m_system->m_d3d_device;
+
 	//Get the back buffer color and create its render target view
 	//--------------------------------
-	ID3D11Texture2D* buffer=NULL;
-	hr=m_swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&buffer);
-	
+	ID3D11Texture2D* buffer = NULL;
+	HRESULT hr = m_swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&buffer);
+
 	if (FAILED(hr))
 	{
 		throw std::exception("SwapChain not created successfully");
 	}
 
-	hr=device->CreateRenderTargetView(buffer, NULL, &m_rtv);
+	hr = device->CreateRenderTargetView(buffer, NULL, &m_rtv);
 	buffer->Release();
 
 	if (FAILED(hr))
@@ -85,19 +137,4 @@ SwapChain::SwapChain(HWND hwnd, UINT width, UINT height,RenderSystem * system) :
 	{
 		throw std::exception("SwapChain not created successfully");
 	}
-}
-
-
-bool SwapChain::present(bool vsync)
-{
-	m_swap_chain->Present(vsync, NULL);
-	return true;
-}
-
-
-SwapChain::~SwapChain()
-{
-	m_dsv->Release();
-	m_rtv->Release();
-	m_swap_chain->Release();
 }
